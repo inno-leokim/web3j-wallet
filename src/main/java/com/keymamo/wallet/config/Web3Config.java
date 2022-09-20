@@ -11,6 +11,6 @@ public class Web3Config {
 
     @Bean
     public Web3j web3j () {
-        return Web3j.build(new HttpService("my-infura"));
+        return Web3j.build(new HttpService("https://ropsten.infura.io/v3/24ef2d9c3e174f86a26b5aec0d2cd71e"));
     }
 }

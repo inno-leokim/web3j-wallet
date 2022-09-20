@@ -1,15 +1,14 @@
 package com.keymamo.wallet.controller;
 
 import com.keymamo.wallet.controller.dto.BlockNumberDto;
+import com.keymamo.wallet.controller.dto.EtherBalanceDto;
 import com.keymamo.wallet.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.web3j.crypto.CipherException;
-import org.web3j.protocol.core.methods.response.EthBlockNumber;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -29,7 +28,6 @@ public class WalletController {
     }
 
     /**
-     *
      * @return
      * @throws ExecutionException
      * @throws InterruptedException
@@ -45,6 +43,7 @@ public class WalletController {
     /**
      * 함수명 : createNewAccount
      * 내용 : 계정 생성 함수
+     *
      * @return
      * @throws InvalidAlgorithmParameterException
      * @throws CipherException
@@ -60,13 +59,30 @@ public class WalletController {
     /**
      * 함수명 : getEtherBalance
      * 내용 : 특정 계정의 이더리움 잔액체크
+     *
      * @param address
      * @return
      * @throws ExecutionException
      * @throws InterruptedException
      */
     @GetMapping("/api/v1/balance/{address}")
-    public BigInteger getEtherBalance(@PathVariable(value = "address", required = true) String address) throws ExecutionException, InterruptedException {
-        return walletService.getEtherBalance(address);
+    public EtherBalanceDto getEtherBalance(@PathVariable(value = "address", required = true) String address) throws ExecutionException, InterruptedException {
+
+        return new EtherBalanceDto(walletService.getEtherBalance(address));
+    }
+
+    /**
+     * 함수명 : sendEtherTransaction
+     * 내용 : 이더 전송
+     * @return
+     * @throws ExecutionException
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    @GetMapping("/api/v1/transaction/ether")
+    public String sendEtherTransaction() throws ExecutionException, InterruptedException, IOException {
+
+        return walletService.sendEtherTransaction();
+
     }
 }
