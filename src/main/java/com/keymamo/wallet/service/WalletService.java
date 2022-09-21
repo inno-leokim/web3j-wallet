@@ -1,7 +1,11 @@
 package com.keymamo.wallet.service;
 
+import com.keymamo.wallet.controller.dto.CreateAccountRequestDto;
+import com.keymamo.wallet.controller.dto.SendEtherRequestDto;
 import org.apache.tomcat.util.json.JSONParser;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -20,12 +24,19 @@ import java.net.URI;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @Service
 public class WalletService {
 
     private final Web3j web3j;
+    private String currentDirectory = System.getProperty("user.dir"); //현재 디렉토리
+
+    @Value("${java.file.etherscan.apiUrl}") String etherScanApiUrl;
+    @Value("${java.file.etherscan.apikey}") String etherScanApiKey;
+    @Value("${java.file.networkId}") Integer networkId;
+
 
     @Autowired
     public WalletService(Web3j web3j) {
@@ -42,9 +53,13 @@ public class WalletService {
         return blockNumber.getBlockNumber();
     }
 
-    public String createAccount() throws InvalidAlgorithmParameterException, CipherException, NoSuchAlgorithmException, IOException, NoSuchProviderException {
+    public String createAccount(CreateAccountRequestDto requestDto)
+            throws InvalidAlgorithmParameterException,
+                    CipherException,
+                    NoSuchAlgorithmException,
+                    IOException,
+                    NoSuchProviderException {
 
-        String currentDirectory = System.getProperty("user.dir"); //현재 디렉토리
         File walletFileDir = new File(currentDirectory + "/wallet-files");
 
         if(!walletFileDir.exists()) {
@@ -52,12 +67,13 @@ public class WalletService {
         }
 
         return WalletUtils.generateNewWalletFile(
-                "랜덤비번",
+                requestDto.getPassword(),
                 new File(currentDirectory + "/wallet-files")
         );
     }
 
     public EthGetBalance getEtherBalance(String address) throws ExecutionException, InterruptedException {
+
         EthGetBalance balance = web3j.ethGetBalance(address, DefaultBlockParameterName.LATEST)
                                     .sendAsync()
                                     .get();
@@ -65,17 +81,66 @@ public class WalletService {
         return balance;
     }
 
-    public EthSendTransaction sendEtherTransaction() throws ExecutionException, InterruptedException, IOException {
+    public EthSendTransaction sendEtherTransaction(SendEtherRequestDto requestDto)
+            throws ExecutionException,
+                    InterruptedException,
+                    IOException,
+                    CipherException
+    {
 
-        EthGetTransactionCount ethGetTransactionCount = web3j.ethGetTransactionCount("0xF4ed389d4A73D9D87A4d5f1506b04a1c284E0de3",DefaultBlockParameterName.LATEST).send();
-        BigInteger nonce = ethGetTransactionCount.getTransactionCount();
+        EthGetTransactionCount ethGetTransactionCount = web3j.ethGetTransactionCount(requestDto.getFrom(), DefaultBlockParameterName.LATEST).send();
 
-        String to = ""; // receiver의 address
-        Integer chainId = 3; // networkID (1: mainnet, 3: ropstent)
-        BigInteger gasLimit = BigInteger.valueOf(21000);
-        EthGasPrice ethGasPrice = web3j.ethGasPrice().sendAsync().get();
-        BigInteger value = Convert.toWei("보내는 수량", Convert.Unit.ETHER).toBigInteger();
+        RawTransaction rawTransaction =
+                getRawTransaction(
+                        ethGetTransactionCount.getTransactionCount(),
+                        requestDto.getTo(),
+                        BigInteger.valueOf(21000),
+                        web3j.ethGasPrice().sendAsync().get(),
+                        Convert.toWei(requestDto.getAmount(), Convert.Unit.ETHER).toBigInteger()
+                );
 
+        Integer chainId = networkId; // networkID (1: mainnet, 3: ropstent)
+
+        String addressToFindFile = requestDto.getFrom().replace("0x", ""); // from 주소에서 0x 제거
+
+        File path = new File(currentDirectory + "/wallet-files");
+        File fileList[] = path.listFiles();
+        String fileName = "";
+
+        for (File file : fileList) {
+
+            if(file.getName().contains(addressToFindFile)){
+                fileName = file.getName();
+            }
+        }
+
+        Credentials credentials = WalletUtils.loadCredentials(requestDto.getPassword(), currentDirectory + "/wallet-files/"+fileName);
+
+        byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, chainId, credentials);
+        String hexValue = Numeric.toHexString(signedMessage);
+        EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).sendAsync().get();
+        
+        return ethSendTransaction;
+    }
+
+    /**
+     * 함수명 : getRawTransaction
+     * 내용 : rawTransaction 생성
+     * @param nonce
+     * @param to
+     * @param gasLimit
+     * @param ethGasPrice
+     * @param value
+     * @return
+     */
+    @NotNull
+    private static RawTransaction getRawTransaction(
+            BigInteger nonce,
+            String to,
+            BigInteger gasLimit,
+            EthGasPrice ethGasPrice,
+            BigInteger value)
+    {
         RawTransaction rawTransaction = RawTransaction.createEtherTransaction(
                 nonce,
                 ethGasPrice.getGasPrice(),
@@ -84,21 +149,14 @@ public class WalletService {
                 value
         );
 
-
-        String privateKey=""; // signer의 private_key. 파일에서 추출한다.
-        Credentials credentials = Credentials.create(privateKey);
-        byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, chainId, credentials);
-        String hexValue = Numeric.toHexString(signedMessage);
-        EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).sendAsync().get();
-        
-        return ethSendTransaction;
+        return rawTransaction;
     }
 
 
     public Object getTransactionHistory(String address) throws ExecutionException, InterruptedException {
 
         URI uri = UriComponentsBuilder
-                .fromUriString("https://api-ropsten.etherscan.io")
+                .fromUriString(etherScanApiUrl)
                 .path("/api")
                 .queryParam("module", "account")
                 .queryParam("action", "txlist")
@@ -107,7 +165,7 @@ public class WalletService {
                 .queryParam("endblock", getBlockNumber())
                 .queryParam("offset", 10)
                 .queryParam("sort", "asc")
-                .queryParam("apikey", "BAAKZRV1J2YJDXSANPYDNP73RFVB1K8313")
+                .queryParam("apikey", etherScanApiKey)
                 .encode().build().toUri();
 
         RestTemplate restTemplete = new RestTemplate();
