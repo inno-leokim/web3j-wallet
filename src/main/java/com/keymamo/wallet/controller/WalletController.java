@@ -2,10 +2,7 @@ package com.keymamo.wallet.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.keymamo.wallet.controller.dto.BlockNumberDto;
-import com.keymamo.wallet.controller.dto.CreateAccountRequestDto;
-import com.keymamo.wallet.controller.dto.EtherBalanceDto;
-import com.keymamo.wallet.controller.dto.SendEtherRequestDto;
+import com.keymamo.wallet.controller.dto.*;
 import com.keymamo.wallet.service.WalletService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.tomcat.util.json.JSONParser;
@@ -20,6 +17,7 @@ import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -80,7 +78,7 @@ public class WalletController {
      * @throws InterruptedException
      */
     @GetMapping("/transaction/history")
-    public Object getTransactionHistory(@RequestParam(value = "address", required = true) String address)
+    public ArrayList<HistoryResponseDto> getTransactionHistory(@RequestParam(value = "address", required = true) String address)
             throws ExecutionException, InterruptedException
     {
         return walletService.getTransactionHistory(address);

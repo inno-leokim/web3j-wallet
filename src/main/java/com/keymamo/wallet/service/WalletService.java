@@ -1,7 +1,14 @@
 package com.keymamo.wallet.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.keymamo.wallet.controller.dto.CreateAccountRequestDto;
+import com.keymamo.wallet.controller.dto.HistoryResponseDto;
 import com.keymamo.wallet.controller.dto.SendEtherRequestDto;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.apache.tomcat.util.json.JSONParser;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +31,18 @@ import java.net.URI;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+
+@Getter
+@RequiredArgsConstructor
+class HistoryResult {
+    private final String status;
+    private final String message;
+    private final ArrayList<Object> result;
+}
 
 @Service
 public class WalletService {
@@ -153,7 +170,7 @@ public class WalletService {
     }
 
 
-    public Object getTransactionHistory(String address) throws ExecutionException, InterruptedException {
+    public ArrayList<HistoryResponseDto> getTransactionHistory(String address) throws ExecutionException, InterruptedException {
 
         URI uri = UriComponentsBuilder
                 .fromUriString(etherScanApiUrl)
@@ -176,6 +193,76 @@ public class WalletService {
 
         ResponseEntity<Object> responseEntity = restTemplete.exchange(uri, HttpMethod.GET, entity, Object.class);
 
-        return responseEntity;
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> map = objectMapper.convertValue(responseEntity, Map.class);
+
+        String status = "";
+        String message = "";
+        ArrayList<Object> result = new ArrayList<>();
+
+        for(String key : map.keySet()) {
+            if(key.equals("body")){
+                Map<String, Object> resultMap = objectMapper.convertValue(map.get(key), Map.class);
+                for (String resultKey : resultMap.keySet()) {
+                    if(resultKey.equals("status")){
+                        status = (String) resultMap.get(resultKey);
+                    }
+
+                    if(resultKey.equals("message")){
+                        message = (String) resultMap.get(resultKey);
+                    }
+
+                    if(resultKey.equals("result")){
+                        result = (ArrayList<Object>) resultMap.get(resultKey);
+                    }
+                }
+            }
+        }
+
+        HistoryResult historyResult = new HistoryResult(status, message, result);
+        HistoryResponseDto historyResponseDto = new HistoryResponseDto();
+        ArrayList<HistoryResponseDto> historyResponseDtoArrayList = new ArrayList<>();
+
+        Iterator it = result.iterator();
+
+        while (it.hasNext()) {
+            Map<String, Object> transactionMap = objectMapper.convertValue(it.next(), Map.class);
+
+            for (String key : transactionMap.keySet()){
+                switch (key) {
+                    case "blockNumber"      : historyResponseDto.setBlockNumber((String) transactionMap.get(key)); break;
+                    case "timeStamp"        : historyResponseDto.setTimeStamp((String) transactionMap.get(key)); break;
+                    case "hash"             : historyResponseDto.setHash((String) transactionMap.get(key));  break;
+                    case "nonce"            : historyResponseDto.setNonce((String) transactionMap.get(key)); break;
+                    case "blockHash"        : historyResponseDto.setBlockHash((String) transactionMap.get(key)); break;
+                    case "transactionIndex" : historyResponseDto.setTransactionIndex((String) transactionMap.get(key)); break;
+                    case "from"             : historyResponseDto.setFrom((String) transactionMap.get(key)); break;
+                    case "to"               : historyResponseDto.setTo((String) transactionMap.get(key)); break;
+                    case "value"            : historyResponseDto.setValue((String) transactionMap.get(key)); break;
+                    case "gas"              : historyResponseDto.setGas((String) transactionMap.get(key)); break;
+                    case "gasPrice"         : historyResponseDto.setGasPrice((String) transactionMap.get(key)); break;
+                    case "isError"          : historyResponseDto.setIsError((String) transactionMap.get(key)); break;
+                    case "txreceipt_status" : historyResponseDto.setTxreceipt_status((String) transactionMap.get(key)); break;
+                    case "input"            : historyResponseDto.setInput((String) transactionMap.get(key)); break;
+                    case "contractAddress"  : historyResponseDto.setContractAddress((String) transactionMap.get(key)); break;
+                    case "cumulativeGasUsed": historyResponseDto.setCumulativeGasUsed((String) transactionMap.get(key)); break;
+                    case "gasUsed"          : historyResponseDto.setGasUsed((String) transactionMap.get(key)); break;
+                    case "confirmations"    : historyResponseDto.setConfirmations((String) transactionMap.get(key)); break;
+                    case "methodId"         : historyResponseDto.setMethodId((String) transactionMap.get(key)); break;
+                    case "functionName"     : historyResponseDto.setFunctionName((String) transactionMap.get(key)); break;
+                }
+            }
+
+            // 이더 전송 시 gasUsed가 21000이기 때문에
+            // 해당 조건에 맞는 건을 이더 전송 건으로 간주하고 추출
+            if(historyResponseDto.getGasUsed().equals("21000")){
+                historyResponseDtoArrayList.add(historyResponseDto);
+            }
+
+            historyResponseDto = new HistoryResponseDto();
+        }
+
+        return historyResponseDtoArrayList;
     }
 }
+
