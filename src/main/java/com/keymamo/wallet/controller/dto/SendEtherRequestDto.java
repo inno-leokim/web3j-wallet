@@ -14,8 +14,9 @@ public class SendEtherRequestDto {
     private String amount; // 전송 수량
 
     @Builder
-    public SendEtherRequestDto(String from, String to, String amount) {
+    public SendEtherRequestDto(String from, String password, String to, String amount) {
         this.from = from;
+        this.password = password;
         this.to = to;
         this.amount = amount;
     }

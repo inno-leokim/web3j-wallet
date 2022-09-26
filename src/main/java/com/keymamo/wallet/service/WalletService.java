@@ -33,6 +33,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -104,6 +105,7 @@ public class WalletService {
                     IOException,
                     CipherException
     {
+        Integer etherSendGasUsed = 21000;
 
         EthGetTransactionCount ethGetTransactionCount = web3j.ethGetTransactionCount(requestDto.getFrom(), DefaultBlockParameterName.LATEST).send();
 
@@ -111,7 +113,7 @@ public class WalletService {
                 getRawTransaction(
                         ethGetTransactionCount.getTransactionCount(),
                         requestDto.getTo(),
-                        BigInteger.valueOf(21000),
+                        BigInteger.valueOf(etherSendGasUsed),
                         web3j.ethGasPrice().sendAsync().get(),
                         Convert.toWei(requestDto.getAmount(), Convert.Unit.ETHER).toBigInteger()
                 );
@@ -170,7 +172,7 @@ public class WalletService {
     }
 
 
-    public ArrayList<HistoryResponseDto> getTransactionHistory(String address) throws ExecutionException, InterruptedException {
+    public List<HistoryResponseDto> getTransactionHistory(String address) throws ExecutionException, InterruptedException {
 
         URI uri = UriComponentsBuilder
                 .fromUriString(etherScanApiUrl)

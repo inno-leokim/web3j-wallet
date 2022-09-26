@@ -18,6 +18,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -34,6 +35,8 @@ public class WalletController {
     }
 
     /**
+     * 함수명 : getBlockNumber
+     * 내용 : 현재 block number 조회 함수
      * @return
      * @throws ExecutionException
      * @throws InterruptedException
@@ -78,7 +81,7 @@ public class WalletController {
      * @throws InterruptedException
      */
     @GetMapping("/transaction/history")
-    public ArrayList<HistoryResponseDto> getTransactionHistory(@RequestParam(value = "address", required = true) String address)
+    public List<HistoryResponseDto> getTransactionHistory(@RequestParam(value = "address", required = true) String address)
             throws ExecutionException, InterruptedException
     {
         return walletService.getTransactionHistory(address);
@@ -87,7 +90,6 @@ public class WalletController {
     /**
      * 함수명 : createNewAccount
      * 내용 : 계정 생성 함수
-     *
      * @param requestDto
      * @return
      * @throws InvalidAlgorithmParameterException
