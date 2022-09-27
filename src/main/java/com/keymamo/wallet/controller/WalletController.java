@@ -127,4 +127,22 @@ public class WalletController {
         return walletService.sendEtherTransaction(requestDto);
     }
 
+    /**
+     * 함수명 : sendEtherTransactionByAdmin
+     * 내용 : 관리자 이더 전송
+     * @return
+     * @throws ExecutionException
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    @PostMapping("/send/ether/admin")
+    public EthSendTransaction sendEtherTransactionByAdmin(@RequestBody SendEtherByAdminRequestDto requestDto)
+            throws ExecutionException,
+            InterruptedException,
+            IOException,
+            CipherException
+    {
+        return walletService.sendEtherTransactionByAdmin(requestDto);
+    }
+
 }

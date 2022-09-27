@@ -9,4 +9,7 @@ import org.springframework.context.annotation.PropertySources;
         @PropertySource("classpath:properties/env.properties")
 })
 public class PropertyConfig {
+    /**
+     * env.properties 파일 사용을 위해 필요
+     */
 }

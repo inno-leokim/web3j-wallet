@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.keymamo.wallet.controller.dto.CreateAccountRequestDto;
 import com.keymamo.wallet.controller.dto.HistoryResponseDto;
+import com.keymamo.wallet.controller.dto.SendEtherByAdminRequestDto;
 import com.keymamo.wallet.controller.dto.SendEtherRequestDto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -50,10 +51,14 @@ public class WalletService {
 
     private final Web3j web3j;
     private String currentDirectory = System.getProperty("user.dir"); //현재 디렉토리
+    private Integer etherSendGasUsed = 21000;
 
     @Value("${java.file.etherscan.apiUrl}") String etherScanApiUrl;
     @Value("${java.file.etherscan.apikey}") String etherScanApiKey;
     @Value("${java.file.networkId}") Integer networkId;
+
+    @Value("${java.file.admin.address}") String adminAddress;
+    @Value("${java.file.admin.privateKey}") String adminPrivateKey;
 
 
     @Autowired
@@ -105,8 +110,6 @@ public class WalletService {
                     IOException,
                     CipherException
     {
-        Integer etherSendGasUsed = 21000;
-
         EthGetTransactionCount ethGetTransactionCount = web3j.ethGetTransactionCount(requestDto.getFrom(), DefaultBlockParameterName.LATEST).send();
 
         RawTransaction rawTransaction =
@@ -139,6 +142,34 @@ public class WalletService {
         String hexValue = Numeric.toHexString(signedMessage);
         EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).sendAsync().get();
         
+        return ethSendTransaction;
+    }
+
+    public EthSendTransaction sendEtherTransactionByAdmin(SendEtherByAdminRequestDto requestDto)
+            throws ExecutionException,
+            InterruptedException,
+            IOException
+    {
+
+        EthGetTransactionCount ethGetTransactionCount = web3j.ethGetTransactionCount(adminAddress, DefaultBlockParameterName.LATEST).send();
+
+        RawTransaction rawTransaction =
+                getRawTransaction(
+                        ethGetTransactionCount.getTransactionCount(),
+                        requestDto.getTo(),
+                        BigInteger.valueOf(etherSendGasUsed),
+                        web3j.ethGasPrice().sendAsync().get(),
+                        Convert.toWei(requestDto.getAmount(), Convert.Unit.ETHER).toBigInteger()
+                );
+
+        Integer chainId = networkId; // networkID (1: mainnet, 3: ropstent)
+
+        Credentials credentials = Credentials.create(adminPrivateKey);
+
+        byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, chainId, credentials);
+        String hexValue = Numeric.toHexString(signedMessage);
+        EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).sendAsync().get();
+
         return ethSendTransaction;
     }
 
