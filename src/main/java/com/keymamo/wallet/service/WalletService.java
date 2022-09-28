@@ -294,13 +294,21 @@ public class WalletService {
                 }
             }
 
+            if(address.equals(Keys.toChecksumAddress(historyResponseDto.getFrom()))){
+                historyResponseDto.setKind("send"); //이더 출금
+            }
+
+            if (address.equals(Keys.toChecksumAddress(historyResponseDto.getTo()))) {
+                historyResponseDto.setKind("receive"); //이더 입금
+            }
+
             // 이더 전송 시 gasUsed가 21000이기 때문에
             // 해당 조건에 맞는 건을 이더 전송 건으로 간주하고 추출
-            if(historyResponseDto.getGasUsed().equals("21000")){
+            if(historyResponseDto.getGasUsed().equals(etherSendGasUsed.toString())){
                 historyResponseDtoArrayList.add(historyResponseDto);
             }
 
-            historyResponseDto = new HistoryResponseDto();
+            historyResponseDto = new HistoryResponseDto(); //while을 돌기위해 다시 초기화
         }
 
         return historyResponseDtoArrayList;

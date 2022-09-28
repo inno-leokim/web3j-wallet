@@ -29,5 +29,5 @@ public class HistoryResponseDto {
     private String confirmations;
     private String methodId;
     private String functionName;
-
+    private String kind;
 }
