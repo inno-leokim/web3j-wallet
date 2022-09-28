@@ -6,6 +6,7 @@ import com.keymamo.wallet.controller.dto.*;
 import com.keymamo.wallet.service.WalletService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.tomcat.util.json.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.web3j.crypto.CipherException;
@@ -99,13 +100,12 @@ public class WalletController {
      * @throws NoSuchProviderException
      */
     @PostMapping("/wallet")
-    public String createNewAccount(@RequestBody CreateAccountRequestDto requestDto)
+    public CreateAccountResponseDto createNewAccount(@RequestBody CreateAccountRequestDto requestDto)
             throws InvalidAlgorithmParameterException,
-                    CipherException,
-                    NoSuchAlgorithmException,
-                    IOException,
-                    NoSuchProviderException
-    {
+            CipherException,
+            NoSuchAlgorithmException,
+            IOException,
+            NoSuchProviderException, ParseException {
         return walletService.createAccount(requestDto);
     }
 

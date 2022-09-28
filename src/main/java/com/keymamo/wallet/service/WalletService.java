@@ -2,16 +2,15 @@ package com.keymamo.wallet.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.JSONPObject;
-import com.keymamo.wallet.controller.dto.CreateAccountRequestDto;
-import com.keymamo.wallet.controller.dto.HistoryResponseDto;
-import com.keymamo.wallet.controller.dto.SendEtherByAdminRequestDto;
-import com.keymamo.wallet.controller.dto.SendEtherRequestDto;
+import com.keymamo.wallet.controller.dto.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import org.apache.tomcat.util.json.JSONParser;
 import org.jetbrains.annotations.NotNull;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -26,7 +25,9 @@ import org.web3j.utils.Convert;
 import org.web3j.utils.Numeric;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.InvalidAlgorithmParameterException;
@@ -76,12 +77,12 @@ public class WalletService {
         return blockNumber.getBlockNumber();
     }
 
-    public String createAccount(CreateAccountRequestDto requestDto)
+    public CreateAccountResponseDto createAccount(CreateAccountRequestDto requestDto)
             throws InvalidAlgorithmParameterException,
-                    CipherException,
-                    NoSuchAlgorithmException,
-                    IOException,
-                    NoSuchProviderException {
+            CipherException,
+            NoSuchAlgorithmException,
+            IOException,
+            NoSuchProviderException, ParseException {
 
         File walletFileDir = new File(currentDirectory + "/wallet-files");
 
@@ -89,10 +90,17 @@ public class WalletService {
             walletFileDir.mkdirs();
         }
 
-        return WalletUtils.generateNewWalletFile(
+        String wallet = WalletUtils.generateNewWalletFile(
                 requestDto.getPassword(),
-                new File(currentDirectory + "/wallet-files")
-        );
+                new File(currentDirectory + "/wallet-files"));
+        String filePath = currentDirectory + "/wallet-files/" + wallet;
+        Reader reader = new FileReader(filePath);
+
+        JSONParser parser = new JSONParser();
+        JSONObject jsonObj = (JSONObject)parser.parse(reader);
+        String address = jsonObj.get("address").toString();
+
+        return new CreateAccountResponseDto("0x"+address, filePath);
     }
 
     public EthGetBalance getEtherBalance(String address) throws ExecutionException, InterruptedException {
