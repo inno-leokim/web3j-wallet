@@ -44,7 +44,7 @@ import java.util.concurrent.ExecutionException;
 class HistoryResult {
     private final String status;
     private final String message;
-    private final ArrayList<Object> result;
+    private final List<Object> result;
 }
 
 @Service
@@ -239,7 +239,7 @@ public class WalletService {
 
         String status = "";
         String message = "";
-        ArrayList<Object> result = new ArrayList<>();
+        List<Object> result = new ArrayList<>();
 
         for(String key : map.keySet()) {
             if(key.equals("body")){
