@@ -328,6 +328,28 @@ public class WalletService {
 //        return transactionReceipt.getTransactionReceipt();
 //    }
 
+    public String getTransactionStatus(String transactionHash) throws IOException, TransactionException {
+
+        String status = "";
+        EthGetTransactionReceipt transactionReceipt = web3j.ethGetTransactionReceipt(transactionHash).send();
+
+        if (transactionReceipt.hasError()) {
+//            throw new TransactionException("Error processing request: "
+//                    + transactionReceipt.getError().getMessage());
+            status = "pending";
+            return status;
+        }
+
+        switch (transactionReceipt.getResult().getStatus()) {
+            case "0x1":
+                status = "success"; break;
+            case "0x0":
+                status = "fail"; break;
+        }
+
+        return status;
+    }
+
     public BigDecimal getEstimatedGas() throws IOException {
 
         EthGasPrice ethGasPrice = web3j.ethGasPrice().send();

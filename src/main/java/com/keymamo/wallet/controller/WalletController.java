@@ -17,6 +17,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @Tag(name = "Wallet", description = "지갑 API")
@@ -142,15 +143,19 @@ public class WalletController {
     }
 
     /**
-     * 함수명 : EthGetTransactionReceipt
-     * 내용 : transaction 상태
+     * 함수명 : getTransactionStatus
+     * 내용 : transaction 상태 리턴
      *
      * @param transactionHash
      * @return
      * @throws TransactionException
      * @throws IOException
      */
-//    @GetMapping("/transaction/status")
+    @GetMapping("/transaction/status")
+    public TransactionStatusDto getTransactionStatus(String transactionHash) throws IOException, TransactionException {
+        TransactionStatusDto transactionStatusDto = new TransactionStatusDto(walletService.getTransactionStatus(transactionHash));
+        return transactionStatusDto;
+    }
 //    public Optional<TransactionReceipt> getTransactionReceipt(@RequestParam(value = "transactionHash", required = true) String transactionHash) throws TransactionException, IOException {
 //        return walletService.getTransactionReceipt(transactionHash);
 //    }
