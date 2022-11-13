@@ -3,6 +3,7 @@ package com.keymamo.wallet.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.keymamo.wallet.controller.dto.*;
+import jdk.jshell.JShell;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.web3j.crypto.*;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
+import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.*;
+import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.utils.Convert;
 import org.web3j.utils.Numeric;
 
@@ -28,16 +31,15 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
 
 @Getter
 @RequiredArgsConstructor
@@ -313,5 +315,28 @@ public class WalletService {
 
         return historyResponseDtoArrayList;
     }
+
+//    public Optional<TransactionReceipt> getTransactionReceipt(String transactionHash) throws IOException, TransactionException {
+//
+//        EthGetTransactionReceipt transactionReceipt = web3j.ethGetTransactionReceipt(transactionHash).send();
+//
+//        if (transactionReceipt.hasError()) {
+//            throw new TransactionException("Error processing request: "
+//                    + transactionReceipt.getError().getMessage());
+//        }
+//
+//        return transactionReceipt.getTransactionReceipt();
+//    }
+
+    public BigDecimal getEstimatedGas() throws IOException {
+
+        EthGasPrice ethGasPrice = web3j.ethGasPrice().send();
+
+//        ethGasPrice.getGasPrice().multiply((BigInteger.valueOf(etherSendGasUsed)));
+        BigInteger gasUsed = ethGasPrice.getGasPrice().multiply((BigInteger.valueOf(etherSendGasUsed)));
+
+        return Convert.fromWei(gasUsed.toString(),Convert.Unit.ETHER);
+    }
+
 }
 

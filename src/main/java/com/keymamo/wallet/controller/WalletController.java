@@ -1,26 +1,22 @@
 package com.keymamo.wallet.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.keymamo.wallet.controller.dto.*;
 import com.keymamo.wallet.service.WalletService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.tomcat.util.json.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.web3j.crypto.CipherException;
-import org.web3j.protocol.core.methods.response.EthGetBalance;
-import org.web3j.protocol.core.methods.response.EthSendTransaction;
+import org.web3j.protocol.core.methods.response.*;
+import org.web3j.protocol.exceptions.TransactionException;
 
 import java.io.IOException;
-import java.math.BigInteger;
+import java.math.BigDecimal;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @Tag(name = "Wallet", description = "지갑 API")
@@ -38,6 +34,7 @@ public class WalletController {
     /**
      * 함수명 : getBlockNumber
      * 내용 : 현재 block number 조회 함수
+     *
      * @return
      * @throws ExecutionException
      * @throws InterruptedException
@@ -45,8 +42,7 @@ public class WalletController {
     @GetMapping("/block-number")
     public BlockNumberDto getBlockNumber()
             throws ExecutionException,
-                    InterruptedException
-    {
+            InterruptedException {
         BlockNumberDto blockNumberDto = new BlockNumberDto(walletService.getBlockNumber());
         return blockNumberDto;
     }
@@ -66,8 +62,7 @@ public class WalletController {
             @RequestParam(value = "address", required = true) String address
     ) throws
             ExecutionException,
-            InterruptedException
-    {
+            InterruptedException {
         return walletService.getEtherBalance(address);
 //        return new EtherBalanceDto(walletService.getEtherBalance(address));
     }
@@ -75,6 +70,7 @@ public class WalletController {
     /**
      * 함수명 : getTransactionHistory
      * 내용 : 이더 전송 내역
+     *
      * @param address
      * @return
      * @throws JsonProcessingException
@@ -83,14 +79,14 @@ public class WalletController {
      */
     @GetMapping("/transaction/history")
     public List<HistoryResponseDto> getTransactionHistory(@RequestParam(value = "address", required = true) String address)
-            throws ExecutionException, InterruptedException
-    {
+            throws ExecutionException, InterruptedException {
         return walletService.getTransactionHistory(address);
     }
 
     /**
      * 함수명 : createNewAccount
      * 내용 : 계정 생성 함수
+     *
      * @param requestDto
      * @return
      * @throws InvalidAlgorithmParameterException
@@ -112,6 +108,7 @@ public class WalletController {
     /**
      * 함수명 : sendEtherTransaction
      * 내용 : 이더 전송
+     *
      * @return
      * @throws ExecutionException
      * @throws InterruptedException
@@ -120,16 +117,16 @@ public class WalletController {
     @PostMapping("/send/ether")
     public EthSendTransaction sendEtherTransaction(@RequestBody SendEtherRequestDto requestDto)
             throws ExecutionException,
-                    InterruptedException,
-                    IOException,
-                    CipherException
-    {
+            InterruptedException,
+            IOException,
+            CipherException {
         return walletService.sendEtherTransaction(requestDto);
     }
 
     /**
      * 함수명 : sendEtherTransactionByAdmin
      * 내용 : 관리자 이더 전송
+     *
      * @return
      * @throws ExecutionException
      * @throws InterruptedException
@@ -140,9 +137,33 @@ public class WalletController {
             throws ExecutionException,
             InterruptedException,
             IOException,
-            CipherException
-    {
+            CipherException {
         return walletService.sendEtherTransactionByAdmin(requestDto);
     }
 
+    /**
+     * 함수명 : EthGetTransactionReceipt
+     * 내용 : transaction 상태
+     *
+     * @param transactionHash
+     * @return
+     * @throws TransactionException
+     * @throws IOException
+     */
+//    @GetMapping("/transaction/status")
+//    public Optional<TransactionReceipt> getTransactionReceipt(@RequestParam(value = "transactionHash", required = true) String transactionHash) throws TransactionException, IOException {
+//        return walletService.getTransactionReceipt(transactionHash);
+//    }
+
+    /**
+     * 함수명 : getEstimatedGas
+     * 내용 : 이더 전송에 소모될 추측 가스량 리턴(단위 : 이더)
+     * @return
+     * @throws IOException
+     */
+    @GetMapping("/estimate/gas/sendEth")
+    public GasEstimateSendEtherDto getEstimatedGas() throws IOException {
+        GasEstimateSendEtherDto gasEstimateSendEther = new GasEstimateSendEtherDto(walletService.getEstimatedGas());
+        return gasEstimateSendEther;
+    }
 }
